@@ -1,0 +1,7 @@
+C:\Users\aleks\source\repos\Black bird\Black bird\obj\Debug\Black bird.csproj.AssemblyReference.cache
+C:\Users\aleks\source\repos\Black bird\Black bird\obj\Debug\Black bird.csproj.CoreCompileInputs.cache
+C:\Users\aleks\source\repos\Black bird\Black bird\bin\Debug\Black bird.exe.config
+C:\Users\aleks\source\repos\Black bird\Black bird\bin\Debug\Black bird.exe
+C:\Users\aleks\source\repos\Black bird\Black bird\bin\Debug\Black bird.pdb
+C:\Users\aleks\source\repos\Black bird\Black bird\obj\Debug\Black bird.exe
+C:\Users\aleks\source\repos\Black bird\Black bird\obj\Debug\Black bird.pdb
