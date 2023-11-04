@@ -1,134 +1,135 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Xml;
+using System.Xml.Linq;
+using Newtonsoft.Json;
 
-class Program
+public class Figure
 {
-    static void Main()
+    public string Name { get; set; }
+    public double Width { get; set; }
+    public double Height { get; set; }
+}
+
+public class TextEditor
+{
+    public void OpenAndConvert(string filePath)
     {
-        bool exit = false;
+        bool exitProgram = false;
 
-        while (!exit)
+        do
         {
-            Console.WriteLine("Выберите программу:");
-            Console.WriteLine("1. Игра \"Угадай число\"");
-            Console.WriteLine("2. Таблица умножения");
-            Console.WriteLine("3. Вывод делителей числа");
-            Console.WriteLine("0. Выход");
+            string[] lines = File.ReadAllLines(filePath);
+            List<Figure> figures = new List<Figure>();
 
-            string input = Console.ReadLine();
-
-            switch (input)
+            for (int i = 0; i < lines.Length; i += 3)
             {
-                case "1":
-                    PlayGuessNumberGame();
-                    break;
-                case "2":
-                    PrintMultiplicationTable();
-                    break;
-                case "3":
-                    PrintDivisors();
-                    break;
-                case "0":
-                    exit = true;
-                    break;
-                default:
-                    Console.WriteLine("Некорректный выбор. Попробуйте снова.");
-                    break;
+                Figure figure = new Figure
+                {
+                    Name = lines[i],
+                    Width = double.Parse(lines[i + 1]),
+                    Height = double.Parse(lines[i + 2])
+                };
+
+                figures.Add(figure);
             }
 
-            Console.WriteLine();
-        }
-
-        Console.WriteLine("До свидания!");
-    }
-
-    static void PlayGuessNumberGame()
-    {
-        Random random = new Random();
-        int targetNumber = random.Next(101);
-
-        Console.WriteLine("Добро пожаловать в игру \"Угадай число\"!");
-        Console.WriteLine("Я загадал число от 0 до 100. Попробуйте угадать.");
-
-        int attempts = 0;
-        bool guessed = false;
-
-        while (!guessed)
-        {
-            Console.Write("Ваше число: ");
-            string input = Console.ReadLine();
-            int guess;
-
-            if (int.TryParse(input, out guess))
+            foreach (Figure figure in figures)
             {
-                attempts++;
+                Console.WriteLine($"Name: {figure.Name}, Width: {figure.Width}, Height: {figure.Height}");
+            }
 
-                if (guess < targetNumber)
-                {
-                    Console.WriteLine("Загаданное число больше.");
-                }
-                else if (guess > targetNumber)
-                {
-                    Console.WriteLine("Загаданное число меньше.");
-                }
-                else
-                {
-                    Console.WriteLine($"Вы угадали число за {attempts} попыток. Поздравляю!");
-                    guessed = true;
-                }
+            Console.WriteLine("Выберите формат для экспорта данных. Введите 'json', 'xml' или 'txt':");
+            string exportFormat = Console.ReadLine();
+
+            if (exportFormat.ToLower() == "json")
+            {
+                ExportToJson(figures);
+            }
+            else if (exportFormat.ToLower() == "xml")
+            {
+                ExportToXml(figures);
+            }
+            else if (exportFormat.ToLower() == "txt")
+            {
+                ExportToTxt(figures);
             }
             else
             {
-                Console.WriteLine("Некорректный ввод. Попробуйте снова.");
+                Console.WriteLine("Некорректный формат для экспорта данных.");
             }
-        }
+
+            Console.WriteLine("Нажмите Escape для выхода из программы или любую другую клавишу для открытия нового файла.");
+            exitProgram = Console.ReadKey().Key == ConsoleKey.Escape;
+
+        } while (!exitProgram);
     }
 
-    static void PrintMultiplicationTable()
+    private void ExportToJson(List<Figure> figures)
     {
-        int[,] table = new int[10, 10];
+        string jsonData = JsonConvert.SerializeObject(figures, Newtonsoft.Json.Formatting.Indented);
 
-        for (int i = 0; i < 10; i++)
-        {
-            for (int j = 0; j < 10; j++)
-            {
-                table[i, j] = (i + 1) * (j + 1);
-            }
-        }
+        string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        string newFilePath = Path.Combine(desktopPath, "output.json");
 
-        Console.WriteLine("Таблица умножения:");
-        Console.WriteLine();
+        File.WriteAllText(newFilePath, jsonData);
 
-        for (int i = 0; i < 10; i++)
-        {
-            for (int j = 0; j < 10; j++)
-            {
-                Console.Write($"{table[i, j],4}");
-            }
-            Console.WriteLine();
-        }
+        Console.WriteLine($"Данные успешно экспортированы в JSON. Файл сохранен на рабочем столе с именем 'output.json'.");
     }
 
-    static void PrintDivisors()
+    private void ExportToXml(List<Figure> figures)
     {
-        Console.Write("Введите число: ");
-        string input = Console.ReadLine();
-        int number;
+        XDocument xmlDocument = new XDocument(new XElement("Figures"));
 
-        if (int.TryParse(input, out number))
+        foreach (Figure figure in figures)
         {
-            Console.WriteLine($"Делители числа {number}:");
+            XElement figureElement = new XElement("Figure",
+                new XElement("Name", figure.Name),
+                new XElement("Width", figure.Width),
+                new XElement("Height", figure.Height));
 
-            for (int i = 1; i <= number; i++)
+            xmlDocument.Root.Add(figureElement);
+        }
+
+        string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        string newFilePath = Path.Combine(desktopPath, "output.xml");
+
+        xmlDocument.Save(newFilePath);
+
+        Console.WriteLine($"Данные успешно экспортированы в XML. Файл сохранен на рабочем столе с именем 'output.xml'.");
+    }
+
+    private void ExportToTxt(List<Figure> figures)
+    {
+        string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        string newFilePath = Path.Combine(desktopPath, "output.txt");
+
+        using (StreamWriter writer = new StreamWriter(newFilePath))
+        {
+            foreach (Figure figure in figures)
             {
-                if (number % i == 0)
-                {
-                    Console.WriteLine(i);
-                }
+                writer.WriteLine(figure.Name);
+                writer.WriteLine(figure.Width);
+                writer.WriteLine(figure.Height);
             }
         }
-        else
-        {
-            Console.WriteLine("Некорректный ввод. Попробуйте снова.");
-        }
+
+        Console.WriteLine($"Данные успешно экспортированы в TXT. Файл сохранен на рабочем столе с именем 'output.txt'.");
+    }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        TextEditor editor = new TextEditor();
+
+        Console.WriteLine("Введите путь к файлу:");
+        string filePath = Console.ReadLine();
+
+        editor.OpenAndConvert(filePath);
+
+        Console.ReadLine();
     }
 }
