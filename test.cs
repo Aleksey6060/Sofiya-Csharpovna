@@ -1,0 +1,210 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+using System.Diagnostics;
+using System.Threading;
+using System.Linq;
+
+[Serializable]
+public class User
+{
+    public string Name { get; set; }
+    public int CharactersPerMinute { get; set; }
+    public int CharactersPerSecond { get; set; }
+}
+
+public static class Leaderboard
+{
+    private const string FileName = "leaderboard.json";
+    private static List<User> users;
+
+    static Leaderboard()
+    {
+        users = LoadLeaderboard();
+    }
+
+    public static void AddUser(User user)
+    {
+        users.Add(user);
+        SaveLeaderboard();
+    }
+
+    public static List<User> GetLeaderboard()
+    {
+        return users;
+    }
+
+    private static List<User> LoadLeaderboard()
+    {
+        if (File.Exists(FileName))
+        {
+            var json = File.ReadAllText(FileName);
+            return JsonSerializer.Deserialize<List<User>>(json);
+        }
+
+        return new List<User>();
+    }
+
+    private static void SaveLeaderboard()
+    {
+        var json = JsonSerializer.Serialize(users);
+        File.WriteAllText(FileName, json);
+    }
+}
+
+public class TypingTest
+{
+    private const int TestDuration = 60;
+    private string text;
+    private string userText;
+    private Stopwatch stopwatch;
+    private Thread timerThread;
+
+    public TypingTest(string text)
+    {
+        this.text = text;
+    }
+
+    public void Start()
+    {
+        Console.Write("Введите ваше имя: ");
+        var name = Console.ReadLine();
+        Console.WriteLine($"Вам нужно будет набрать следующий текст:\n{text}");
+        Console.WriteLine("\nНажмите Enter, чтобы начать набор текста...");
+        Console.ReadLine();
+
+        stopwatch = new Stopwatch();
+        userText = "";
+        timerThread = new Thread(() => TimerCallback(name));
+        timerThread.Start();
+
+        Console.Clear();
+
+        stopwatch.Start();
+        ConsoleKey[] allowedKeys = text.ToCharArray().Select(c => (ConsoleKey)c).ToArray();
+
+        int currentIndex = 0;
+        while (true)
+        {
+            Console.SetCursorPosition(0, 3);
+            Console.Write(new string(' ', Console.WindowWidth - 1));
+            Console.SetCursorPosition(0, 3);
+            Console.Write($"Вводите текст: \"{text}\"");
+
+            Console.SetCursorPosition(0, 4);
+            Console.Write(new string(' ', Console.WindowWidth - 1));
+            Console.SetCursorPosition(0, 4);
+
+            for (int i = 0; i < userText.Length; i++)
+            {
+                if (i < currentIndex)
+                {
+                    Console.ForegroundColor = userText[i] == text[i] ? ConsoleColor.Green : ConsoleColor.Red;
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Black;
+                }
+                Console.Write(userText[i]);
+            }
+
+            if (currentIndex < text.Length)
+            {
+                Console.ForegroundColor = ConsoleColor.Black;
+                Console.Write(text[currentIndex]);
+            }
+
+            Console.ForegroundColor = ConsoleColor.Black;
+
+            ConsoleKeyInfo key;
+            do
+            {
+                key = Console.ReadKey(true);
+            } while (!allowedKeys.Contains(key.Key));
+
+            if (key.Key == ConsoleKey.Enter || stopwatch.Elapsed.TotalSeconds >= TestDuration)
+            {
+                break;
+            }
+
+            if (text.Contains(key.KeyChar.ToString()))
+            {
+                userText += key.KeyChar;
+                currentIndex++;
+            }
+        }
+
+        stopwatch.Stop();
+        timerThread.Join();
+
+        CalculateTypingSpeed(name, stopwatch.Elapsed.TotalSeconds);
+    }
+
+    private void TimerCallback(string name)
+    {
+        Console.CursorVisible = false;
+
+        for (int i = 0; i < TestDuration; i++)
+        {
+            Console.SetCursorPosition(0, 1);
+            Console.Write($"Оставшееся время: {TestDuration - i} сек.");
+
+            Thread.Sleep(1000);
+        }
+
+        Console.CursorVisible = true;
+
+        CalculateTypingSpeed(name, TestDuration);
+    }
+
+    private void CalculateTypingSpeed(string name, double elapsedTime)
+    {
+        var charactersTyped = userText.Length;
+        var charactersPerMinute = elapsedTime > 0 ? (int)(charactersTyped / (elapsedTime / 60)) : 0;
+        var charactersPerSecond = elapsedTime > 0 ? (int)(charactersTyped / elapsedTime) : 0;
+
+        var user = new User
+        {
+            Name = name,
+            CharactersPerMinute = charactersPerMinute,
+            CharactersPerSecond = charactersPerSecond
+        };
+
+        Leaderboard.AddUser(user);
+
+        Console.Clear();
+        Console.WriteLine("Таблица рекордов:");
+        var leaderboard = Leaderboard.GetLeaderboard();
+        foreach (var entry in leaderboard)
+        {
+            Console.WriteLine($"Имя: {entry.Name}, Символов в минуту: {entry.CharactersPerMinute}, Символов в секунду: {entry.CharactersPerSecond}");
+        }
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        bool playAgain = true;
+
+        while (playAgain)
+        {
+            Console.Write("Введите текст для теста: ");
+            var text = Console.ReadLine();
+            var typingTest = new TypingTest(text);
+            typingTest.Start();
+
+            Console.Write("Хотите пройти тест ещё раз? (да/нет): ");
+            string response = Console.ReadLine();
+
+            if (response.ToLower() != "да")
+            {
+                playAgain = false;
+            }
+
+            Console.Clear();
+        }
+    }
+}
