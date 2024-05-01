@@ -7,6 +7,15 @@
         mc:Ignorable="d"
         Title="Календарь Игр" Height="450" Width="428">
     <Window.Resources>
+        <Style x:Key="DayButtonStyle" TargetType="Button">
+            <Setter Property="Opacity" Value="1" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
         <ContextMenu x:Key="DayContextMenu">
             <MenuItem Header="Открыть день" Click="OpenDay_Click"/>
             <MenuItem Header="Очистить день" Click="ClearDay_Click"/>

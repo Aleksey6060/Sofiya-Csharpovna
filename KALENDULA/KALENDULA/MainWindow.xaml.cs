@@ -24,7 +24,7 @@ namespace KALENDULA
 
         private void CreateDayButton(int day, int column, int row)
         {
-            Button dayButton = new Button() { Content = day.ToString(), Margin = new Thickness(5) };
+            Button dayButton = new Button() { Content = day.ToString(), Margin = new Thickness(5), Style = (Style)FindResource("DayButtonStyle") };
             Grid.SetColumn(dayButton, column);
             Grid.SetRow(dayButton, row);
             dayButton.Click += DayButton_Click;
@@ -40,30 +40,60 @@ namespace KALENDULA
             calendarGrid.ColumnDefinitions.Clear();
 
             int daysInMonth = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
-            DayOfWeek firstDayOfWeek = new DateTime(currentDate.Year, currentDate.Month, 1).DayOfWeek;
+            DayOfWeek firstDayOfWeek = currentDate.DayOfWeek;
 
+            // Add columns for each day of the week
             for (int i = 0; i < 7; i++)
             {
                 calendarGrid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) });
             }
 
+            // Add day names
             string[] dayNames = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
             for (int i = 0; i < dayNames.Length; i++)
             {
                 Button dayButton = new Button() { Content = dayNames[i], IsEnabled = false, Background = Brushes.LightGray };
-                Grid.SetColumn(dayButton, (int)firstDayOfWeek + i >= 7 ? (int)firstDayOfWeek + i - 7 : (int)firstDayOfWeek + i);
+                Grid.SetColumn(dayButton, i);
                 calendarGrid.Children.Add(dayButton);
             }
 
-            for (int i = 1; i <= daysInMonth; i++)
+            // Calculate the number of rows needed
+            int totalDays = daysInMonth + (int)firstDayOfWeek;
+            int totalWeeks = (totalDays + 6) / 7; // Add 6 to round up
+
+            // Add rows
+            for (int i = 0; i < totalWeeks; i++)
             {
-                int column = (int)(new DateTime(currentDate.Year, currentDate.Month, i).DayOfWeek);
-                int row = (i - 1 + (int)firstDayOfWeek) / 7 + 1;
-                if (row > calendarGrid.RowDefinitions.Count)
+                calendarGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(1, GridUnitType.Star) });
+            }
+
+            // Add day buttons
+            int day = 1;
+            for (int row = 1; row <= totalWeeks; row++)
+            {
+                for (int column = 0; column < 7; column++)
                 {
-                    calendarGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(1, GridUnitType.Star) });
+                    if (row == 1 && column < (int)firstDayOfWeek)
+                    {
+                        // Fill in the empty spaces before the first day of the month
+                        calendarGrid.Children.Add(new Button() { IsEnabled = false, Background = Brushes.LightGray });
+                        Grid.SetColumn(calendarGrid.Children[calendarGrid.Children.Count - 1], column);
+                        Grid.SetRow(calendarGrid.Children[calendarGrid.Children.Count - 1], row);
+                    }
+                    else if (day <= daysInMonth)
+                    {
+                        // Create a day button
+                        CreateDayButton(day, column, row);
+                        day++;
+                    }
+                    else
+                    {
+                        // Fill in the empty spaces after the last day of the month
+                        calendarGrid.Children.Add(new Button() { IsEnabled = false, Background = Brushes.LightGray });
+                        Grid.SetColumn(calendarGrid.Children[calendarGrid.Children.Count - 1], column);
+                        Grid.SetRow(calendarGrid.Children[calendarGrid.Children.Count - 1], row);
+                    }
                 }
-                CreateDayButton(i, column, row);
             }
 
             txtMonthYear.Text = currentDate.ToString("MMMM yyyy");
@@ -74,6 +104,8 @@ namespace KALENDULA
             Button clickedButton = (Button)sender;
             DateTime selectedDate = (DateTime)clickedButton.Tag;
 
+            System.Diagnostics.Debug.WriteLine($"DayButton_Click called for date: {selectedDate}");
+
             if (e.OriginalSource is ContextMenu)
             {
                 ContextMenu contextMenu = (ContextMenu)clickedButton.ContextMenu;
@@ -82,6 +114,7 @@ namespace KALENDULA
             }
             else
             {
+                System.Diagnostics.Debug.WriteLine("OpenDay_Click called");
                 OpenDay_Click(sender, e);
             }
         }
@@ -90,6 +123,8 @@ namespace KALENDULA
         {
             Button dayButton = (Button)sender;
             DateTime selectedDate = (DateTime)dayButton.Tag;
+
+            System.Diagnostics.Debug.WriteLine($"OpenDay_Click called for date: {selectedDate}");
 
             try
             {
@@ -102,9 +137,13 @@ namespace KALENDULA
             }
         }
 
+
+
         private void ClearDay_Click(object sender, RoutedEventArgs e)
         {
-            Button dayButton = (Button)sender;
+            MenuItem menuItem = (MenuItem)sender;
+            ContextMenu contextMenu = (ContextMenu)menuItem.Parent;
+            Button dayButton = (Button)contextMenu.PlacementTarget;
             DateTime selectedDate = (DateTime)dayButton.Tag;
 
             string jsonFilePath = "activities.json";
@@ -169,6 +208,20 @@ namespace KALENDULA
 
             UpdateCalendar();
         }
+
+        public void UpdateDayButton(DateTime date, string activityName)
+        {
+            foreach (UIElement element in calendarGrid.Children)
+            {
+                if (element is Button button && button.Tag is DateTime buttonDate && buttonDate.Date == date.Date)
+                {
+                    button.Content = activityName;
+                    break;
+                }
+            }
+        }
+
+
     }
 
     public class Activity

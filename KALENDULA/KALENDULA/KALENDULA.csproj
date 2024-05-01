@@ -56,6 +56,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="SerializationHelper.cs" />
     <Page Include="ActivitySelectionWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -101,6 +102,24 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\minecraft.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\palworld.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\cs2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\dayz.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\dota2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\farm.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

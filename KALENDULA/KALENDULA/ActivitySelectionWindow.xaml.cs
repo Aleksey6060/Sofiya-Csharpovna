@@ -5,6 +5,8 @@ using System.Windows;
 using System.Windows.Controls;
 using Newtonsoft.Json;
 using System.Windows.Media.Imaging;
+using KALENDULA;
+using System.Linq;
 
 namespace KALENDAR
 {
@@ -32,20 +34,19 @@ namespace KALENDAR
             List<string> activityList = new List<string> { "CS2", "Dota2", "Palworld", "Minecraft", "Весёлая  ферма", "DayZ" };
             List<string> imagePaths = new List<string> { "cs2.png", "dota2.png", "palworld.png", "minecraft.png", "farm.png", "dayz.png" };
 
-            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            string imagesFolderPath = Path.Combine(desktopPath, "Images");
-
             foreach (var activity in activityList)
             {
                 int index = activityList.IndexOf(activity);
                 string imageFileName = imagePaths[index];
-                string imagePath = Path.Combine(imagesFolderPath, imageFileName);
+
+                // Получаем поток ресурса изображения
+                Uri imageUri = new Uri("pack://application:,,,/Images/" + imageFileName, UriKind.Absolute);
 
                 StackPanel gamePanel = new StackPanel { Orientation = Orientation.Horizontal };
 
                 Image image = new Image
                 {
-                    Source = new BitmapImage(new Uri(imagePath)),
+                    Source = new BitmapImage(imageUri),
                     Width = 50,
                     Height = 50
                 };
@@ -76,6 +77,12 @@ namespace KALENDAR
             }
             activities[selectedDate] = selectedActivities;
             SaveActivitiesToFile();
+            MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+            if (mainWindow != null)
+            {
+                mainWindow.UpdateDayButton(selectedDate, selectedActivities.FirstOrDefault() ?? "Нет игр");
+            }
+
             Close();
         }
 
